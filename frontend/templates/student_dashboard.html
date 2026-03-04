@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard — Face Recognition Attendance</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .profile-card {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 28px;
+        }
+
+        .profile-avatar {
+            width: 72px;
+            height: 72px;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(79, 140, 255, 0.3);
+        }
+
+        .profile-info h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .profile-info p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .profile-meta {
+            display: flex;
+            gap: 20px;
+            margin-top: 8px;
+        }
+
+        .profile-meta span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .student-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .student-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .profile-card {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .profile-meta {
+                justify-content: center;
+            }
+        }
+
+        .attendance-status {
+            font-size: 15px;
+            font-weight: 600;
+            padding: 4px 14px;
+            border-radius: 20px;
+        }
+
+        .status-present {
+            background: var(--accent-green-dim);
+            color: var(--accent-green);
+        }
+
+        .status-absent {
+            background: var(--accent-red-dim);
+            color: var(--accent-red);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="/student/dashboard" class="logo">
+                <div class="logo-icon">🎯</div>
+                <div class="logo-text"><span>FaceAttend</span> Student</div>
+            </a>
+            <div class="nav-links">
+                <a href="/student/dashboard" class="nav-link active">📊 My Dashboard</a>
+                <a href="/logout" class="nav-link"
+                    style="background: var(--accent-red-dim); color: var(--accent-red); border-radius: 8px; padding: 6px 16px;">🚪
+                    Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Page Content ── -->
+    <div class="container">
+
+        <!-- Profile Card -->
+        <div class="card fade-in profile-card" style="margin-bottom: 24px;">
+            <div class="profile-avatar" id="profileAvatar">🎓</div>
+            <div class="profile-info">
+                <h2 id="studentName">Loading...</h2>
+                <p id="studentRoll">Roll Number: --</p>
+                <div class="profile-meta">
+                    <span id="studentGender">Gender: --</span>
+                    <span id="studentRegistered">Registered: --</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="student-grid fade-in">
+            <div class="stat-card">
+                <div class="stat-label">Today's Status</div>
+                <div class="stat-value green" id="todayStatus">--</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;" id="todayDate"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sessions Today</div>
+                <div class="stat-value blue" id="todaySessions">0</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Classes Attended</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Confidence</div>
+                <div class="stat-value purple" id="avgConfidence">--%</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Face Recognition</div>
+            </div>
+        </div>
+
+        <!-- Attendance History -->
+        <div class="card fade-in" style="margin-bottom: 24px;">
+            <div class="card-title" style="justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span class="icon">📅</span> My Attendance
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <input type="date" id="dateSelect" class="form-input" onchange="loadMyAttendance()"
+                        style="width: auto; padding: 8px 12px; font-size: 13px;">
+                    <button class="btn btn-outline" onclick="loadMyAttendance()"
+                        style="padding: 8px 16px; font-size: 13px;">🔄 Refresh</button>
+                </div>
+            </div>
+
+            <div id="attendanceTable">
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <p>Loading your attendance records...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set today's date
+        function setToday() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateSelect').value = today;
+            document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        // Load profile
+        async function loadProfile() {
+            try {
+                const response = await fetch('/student/api/my-profile');
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                const data = await response.json();
+
+                document.getElementById('studentName').textContent = data.name;
+                document.getElementById('studentRoll').textContent = `Roll Number: ${data.roll_number}`;
+                document.getElementById('studentGender').textContent = `Gender: ${data.gender}`;
+                document.getElementById('studentRegistered').textContent = `Registered: ${new Date(data.created_at).toLocaleDateString()}`;
+
+                // Fun avatar based on first letter
+                const firstLetter = data.name.charAt(0).toUpperCase();
+                document.getElementById('profileAvatar').textContent = firstLetter;
+            } catch (err) {
+                console.error('Profile error:', err);
+            }
+        }
+
+        // Load my attendance for selected date
+        async function loadMyAttendance() {
+            const date = document.getElementById('dateSelect').value;
+            if (!date) return;
+
+            const container = document.getElementById('attendanceTable');
+
+            try {
+                const response = await fetch(`/student/api/my-attendance?date=${date}`);
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                const data = await response.json();
+
+                // Update stats
+                document.getElementById('todaySessions').textContent = data.total;
+
+                if (data.total > 0) {
+                    document.getElementById('todayStatus').textContent = "Present ✅";
+                    document.getElementById('todayStatus').className = "stat-value green";
+
+                    // Calculate average confidence
+                    const avgConf = data.records.reduce((sum, r) => sum + (r.confidence || 0), 0) / data.total;
+                    document.getElementById('avgConfidence').textContent = `${Math.round(avgConf * 100)}%`;
+
+                    // Build table
+                    let html = '<div class="table-container"><table><thead><tr>';
+                    html += '<th>#</th><th>Subject</th><th>Time</th><th>Confidence</th><th>Status</th>';
+                    html += '</tr></thead><tbody>';
+
+                    data.records.forEach((r, i) => {
+                        const conf = Math.round((r.confidence || 0) * 100);
+                        html += `<tr>
+                            <td style="color: var(--text-muted);">${i + 1}</td>
+                            <td><strong>${escapeHtml(r.subject_name || 'N/A')}</strong></td>
+                            <td style="color: var(--accent-blue);">${r.time || 'N/A'}</td>
+                            <td>
+                                <span class="badge ${conf > 85 ? 'badge-success' : 'badge-info'}">
+                                    ${conf}%
+                                </span>
+                            </td>
+                            <td><span class="attendance-status status-present">Present</span></td>
+                        </tr>`;
+                    });
+
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                } else {
+                    document.getElementById('todayStatus').textContent = "Absent ❌";
+                    document.getElementById('todayStatus').className = "stat-value";
+                    document.getElementById('todayStatus').style.color = "var(--accent-red)";
+                    document.getElementById('avgConfidence').textContent = '--%';
+                    container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No attendance recorded for this date.</p></div>';
+                }
+
+            } catch (err) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Could not load attendance.</p></div>';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Init
+        window.addEventListener('DOMContentLoaded', () => {
+            setToday();
+            loadProfile();
+            loadMyAttendance();
+        });
+    </script>
+</body>
+
+</html>

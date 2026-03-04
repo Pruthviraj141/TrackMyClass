@@ -1,0 +1,30 @@
+# Environment secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+attendance_system\.env
+# Virtual environment
+venv/
+.venv/
+
+# Firebase credentials
+firebase.json
+
+# Database
+*.db
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports (generated at runtime)
+reports/

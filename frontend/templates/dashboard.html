@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Admin Dashboard - Attendance Analytics & Management">
+    <title>Admin Dashboard — Face Recognition Attendance</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        /* Extra dashboard-specific glassmorphism */
+        .glass-card {
+            background: rgba(33, 36, 47, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-card.active {
+            border-color: var(--accent-green);
+            background: rgba(52, 211, 153, 0.05);
+        }
+
+        .table-badge {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .attendance-high {
+            color: var(--accent-green);
+        }
+
+        .attendance-mid {
+            color: var(--accent-yellow);
+        }
+
+        .attendance-low {
+            color: var(--accent-red);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="/admin/dashboard" class="logo">
+                <div class="logo-icon">🎯</div>
+                <div class="logo-text"><span>FaceAttend</span> Admin</div>
+            </a>
+            <div class="nav-links">
+                <a href="/admin/dashboard" class="nav-link active">📊 Dashboard</a>
+                <a href="/monitor" class="nav-link">📷 Monitor</a>
+                <a href="/admin/manage-students" class="nav-link">👥 Students</a>
+                <a href="/logout" class="nav-link"
+                    style="background: var(--accent-red-dim); color: var(--accent-red); border-radius: 8px; padding: 6px 16px;">🚪
+                    Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Page Content ── -->
+    <div class="container">
+        <div class="page-header fade-in">
+            <h1 class="page-title">Admin Dashboard</h1>
+            <p class="page-subtitle">Real-time attendance analytics and session management.</p>
+        </div>
+
+        <!-- ── Stats Grid ── -->
+        <div class="stats-row fade-in">
+            <div class="stat-card glass-card">
+                <div class="stat-label">Active Session</div>
+                <div class="stat-value blue" id="sessionName">None</div>
+                <div id="startTimeLabel" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Started:
+                    --:--</div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-label">Present</div>
+                <div class="stat-value green" id="totalPresent">0</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Students Today</div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-label">Registered</div>
+                <div class="stat-value purple" id="totalRegistered">0</div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Total Database</div>
+            </div>
+            <div class="stat-card glass-card">
+                <div class="stat-label">Rate</div>
+                <div class="stat-value yellow" id="attendancePct">0%</div>
+                <div id="rateStatus" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Target: 75%
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid fade-in">
+            <!-- Left Column: Attendance Feed -->
+            <div class="space-y">
+                <!-- Action Bar -->
+                <div class="card glass-card" style="margin-bottom: 24px; padding: 16px 24px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span class="badge badge-info" id="statusBadge">Checking System...</span>
+                            <span id="sessionTimer"
+                                style="font-family: monospace; font-weight: bold; color: var(--accent-blue);">00:00:00</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="exportExcelBtn" class="btn btn-success" onclick="exportData('excel')" disabled>
+                                � Download Excel
+                            </button>
+                            <button id="exportPdfBtn" class="btn"
+                                style="background-color: var(--accent-red); color: white;" onclick="exportData('pdf')"
+                                disabled>
+                                📄 Download PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div
+                        style="display: flex; gap: 12px; align-items: flex-end; padding-top: 16px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                            <label class="form-label" style="font-size: 11px;">Filter by Date</label>
+                            <input type="date" id="dateFilter" class="form-input" onchange="onFilterChange()"
+                                style="padding: 6px 10px;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; flex: 1;">
+                            <label class="form-label" style="font-size: 11px;">Filter by Subject</label>
+                            <select id="subjectFilter" class="form-input" onchange="fetchDashboardData()"
+                                style="padding: 6px 10px;">
+                                <option value="All">All Subjects</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-outline" onclick="clearFilters()" style="padding: 6px 12px;">Live
+                            Mode</button>
+                    </div>
+                </div>
+
+                <!-- Present List -->
+                <div class="card glass-card">
+                    <div class="card-title">
+                        <span class="icon">✅</span>
+                        Present Students
+                        <span class="badge badge-success" style="margin-left: auto;" id="presentCount">0</span>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Roll Number</th>
+                                    <th>Subject Name</th>
+                                    <th>Time Marked</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="presentList">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Absent List & Management -->
+            <div class="space-y">
+                <!-- Absent List -->
+                <div class="card glass-card" style="margin-bottom: 24px;">
+                    <div class="card-title">
+                        <span class="icon">❌</span>
+                        Absent Students
+                        <span class="badge badge-danger" style="margin-left: auto;" id="absentCount">0</span>
+                    </div>
+                    <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Roll No.</th>
+                                </tr>
+                            </thead>
+                            <tbody id="absentList">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- quick management -->
+                <div class="card glass-card" style="margin-bottom: 24px;">
+                    <div class="card-title"><span class="icon">⚙️</span> Management</div>
+                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+                        Manage student registrations and remove accounts.
+                    </p>
+                    <a href="/admin/manage-students" class="btn btn-outline"
+                        style="width: 100%; text-align: center; justify-content: center; display: flex;">
+                        👥 Manage Students
+                    </a>
+                </div>
+
+                <!-- Quick Help -->
+                <div class="card" style="background: var(--bg-secondary); border-style: dashed;">
+                    <div class="card-title" style="font-size: 14px;"><span class="icon">💡</span> Admin Tip</div>
+                    <p style="font-size: 13px; color: var(--text-secondary);">
+                        Open the <strong>Monitor</strong> page to start a recording session. Attendance is automatically
+                        synced here every 3 seconds.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lastReportGen = 0;
+
+        async function fetchDashboardData() {
+            try {
+                const dateFilter = document.getElementById('dateFilter').value;
+                const subjectFilter = document.getElementById('subjectFilter').value;
+
+                let url = '/admin/api/dashboard-data';
+                if (dateFilter) {
+                    url = `/admin/api/historical-data?date=${dateFilter}&subject=${encodeURIComponent(subjectFilter)}`;
+                }
+
+                const response = await fetch(url, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const data = await response.json();
+
+                // If historical, update subjects dropdown if it hasn't been updated manually
+                if (dateFilter && data.available_subjects) {
+                    const select = document.getElementById('subjectFilter');
+                    // Only rebuild if the number of options (excluding 'All') differs, to avoid resetting user selection constantly
+                    if (select.options.length - 1 !== data.available_subjects.length) {
+                        const currentVal = select.value;
+                        select.innerHTML = '<option value="All">All Subjects</option>';
+                        data.available_subjects.forEach(sub => {
+                            const opt = document.createElement('option');
+                            opt.value = sub;
+                            opt.textContent = sub;
+                            select.appendChild(opt);
+                        });
+                        if (data.available_subjects.includes(currentVal)) {
+                            select.value = currentVal;
+                        }
+                    }
+                }
+
+                // Update Stats
+                document.getElementById('sessionName').textContent = data.session_name || 'No Active Session';
+                document.getElementById('totalRegistered').textContent = data.total_registered;
+                document.getElementById('totalPresent').textContent = data.total_present;
+                document.getElementById('attendancePct').textContent = `${data.attendance_pct}%`;
+
+                // Format Time Helper
+                const formatTime = (isoString) => {
+                    if (!isoString || isoString === "N/A") return "--:--";
+                    const d = new Date(isoString);
+                    return isNaN(d) ? isoString : d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                };
+
+                // Update Badge & Counts
+                const statusBadge = document.getElementById('statusBadge');
+                if (dateFilter) {
+                    statusBadge.textContent = "📅 Historical View";
+                    statusBadge.className = "badge badge-warning";
+                    document.getElementById('startTimeLabel').textContent = `Date: ${data.date}`;
+                    document.getElementById('exportExcelBtn').disabled = false;
+                    document.getElementById('exportPdfBtn').disabled = false;
+                    document.getElementById('sessionName').textContent = data.subject || 'All Subjects';
+                } else {
+                    if (data.active_session) {
+                        statusBadge.textContent = "● Session Live";
+                        statusBadge.className = "badge badge-success";
+                        document.getElementById('startTimeLabel').textContent = `Started: ${formatTime(data.start_time)}`;
+                        document.getElementById('exportExcelBtn').disabled = false;
+                        document.getElementById('exportPdfBtn').disabled = false;
+                        document.getElementById('sessionName').textContent = data.session_name || 'No Active Session';
+                    } else {
+                        statusBadge.textContent = "○ No Active Session";
+                        statusBadge.className = "badge badge-info";
+
+                        if (data.session_name !== "None") {
+                            document.getElementById('startTimeLabel').textContent = `Ended: ${formatTime(data.end_time)}`;
+                            document.getElementById('exportExcelBtn').disabled = false;
+                            document.getElementById('exportPdfBtn').disabled = false;
+                            document.getElementById('sessionName').textContent = data.session_name;
+                        } else {
+                            document.getElementById('startTimeLabel').textContent = "Started: --:--";
+                            document.getElementById('exportExcelBtn').disabled = true;
+                            document.getElementById('exportPdfBtn').disabled = true;
+                            document.getElementById('sessionName').textContent = 'None';
+                        }
+                    }
+                }
+
+                document.getElementById('presentCount').textContent = data.total_present;
+                document.getElementById('absentCount').textContent = data.absent_list.length;
+
+                // Rate Color
+                const rateEl = document.getElementById('attendancePct');
+                const rateStatus = document.getElementById('rateStatus');
+                if (data.attendance_pct >= 75) {
+                    rateEl.className = "stat-value green";
+                    rateStatus.textContent = "Excellent Attendance";
+                    rateStatus.style.color = "var(--accent-green)";
+                } else if (data.attendance_pct >= 50) {
+                    rateEl.className = "stat-value yellow";
+                    rateStatus.textContent = "Average Attendance";
+                    rateStatus.style.color = "var(--accent-yellow)";
+                } else {
+                    rateEl.className = "stat-value red"; // stat-value.red isn't in CSS but we can use red
+                    rateEl.style.color = "var(--accent-red)";
+                    rateStatus.textContent = "Low Attendance";
+                    rateStatus.style.color = "var(--accent-red)";
+                }
+
+                // Render Present List
+                const presentTbody = document.getElementById('presentList');
+                if (data.present_list.length === 0) {
+                    presentTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 32px; color: var(--text-muted);">No students present yet.</td></tr>';
+                } else {
+                    presentTbody.innerHTML = data.present_list.map(s => {
+                        const conf = s.confidence ? Math.round(s.confidence * 100) : '--';
+                        return `
+                            <tr>
+                                <td><strong>${escapeHtml(s.name)}</strong></td>
+                                <td>${escapeHtml(s.roll_number || 'N/A')}</td>
+                                <td>${escapeHtml(s.subject_name || document.getElementById('sessionName').textContent)}</td>
+                                <td style="color: var(--accent-blue)">${s.time || '--:--'}</td>
+                                <td style="color: var(--accent-green); font-weight: bold;">Present</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+
+                // Render Absent List
+                const absentTbody = document.getElementById('absentList');
+                if (data.absent_list.length === 0) {
+                    absentTbody.innerHTML = '<tr><td colspan="2" style="text-align:center; padding: 24px; color: var(--text-muted);">Full attendance!</td></tr>';
+                } else {
+                    absentTbody.innerHTML = data.absent_list.map(s => `
+                        <tr>
+                            <td><strong>${escapeHtml(s.name)}</strong></td>
+                            <td style="color: var(--text-secondary)">${escapeHtml(s.roll_number || 'N/A')}</td>
+                        </tr>
+                    `).join('');
+                }
+
+            } catch (error) {
+                console.error("Dashboard fetch error:", error);
+            }
+        }
+
+        function exportData(format) {
+            const now = Date.now();
+            if (now - lastReportGen < 5000) return; // Debounce
+            lastReportGen = now;
+
+            // Show feedback
+            const btnId = format === 'excel' ? 'exportExcelBtn' : 'exportPdfBtn';
+            const btn = document.getElementById(btnId);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "⏳ Generating...";
+            btn.disabled = true;
+
+            const dateFilter = document.getElementById('dateFilter').value;
+            const subjectFilter = document.getElementById('subjectFilter').value;
+
+            if (dateFilter) {
+                window.location.href = `/admin/export-historical-csv?date=${dateFilter}&subject=${encodeURIComponent(subjectFilter)}&format=${format}`;
+            } else {
+                window.location.href = `/admin/export-csv?format=${format}`;
+            }
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 3000);
+        }
+
+        function onFilterChange() {
+            document.getElementById('subjectFilter').innerHTML = '<option value="All">All Subjects</option>';
+            fetchDashboardData();
+        }
+
+        function clearFilters() {
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('subjectFilter').innerHTML = '<option value="All">All Subjects</option>';
+            fetchDashboardData();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Live Clock for Dashboard
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-GB', { hour12: false });
+            document.getElementById('sessionTimer').textContent = timeStr;
+        }
+
+        // Initialize
+        fetchDashboardData();
+        setInterval(fetchDashboardData, 3000);
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+
+</html>

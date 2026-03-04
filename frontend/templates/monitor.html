@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Live face recognition attendance monitoring with session control">
+    <title>Live Monitor — Face Recognition Attendance</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="/admin/dashboard" class="logo">
+                <div class="logo-icon">🎯</div>
+                <div class="logo-text"><span>FaceAttend</span> System</div>
+            </a>
+            <div class="nav-links">
+                <a href="/admin/dashboard" class="nav-link">📊 Dashboard</a>
+                <a href="/monitor" class="nav-link active">📷 Monitor</a>
+                <a href="/logout" class="nav-link"
+                    style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 16px;">🚪 Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Page Content ── -->
+    <div class="container">
+        <div class="page-header fade-in">
+            <h1 class="page-title">Live Attendance Monitor</h1>
+            <p class="page-subtitle">Session-based attendance with temporal stability tracking.</p>
+        </div>
+
+        <!-- ── Session Control Card ── -->
+        <div class="card fade-in glass-card" style="margin-bottom: 24px;" id="sessionCard">
+            <div class="card-title"><span class="icon">📗</span> Session Control</div>
+            <div id="sessionInactive">
+                <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0; min-width: 280px;">
+                        <label class="form-label" for="subjectName">Subject / Class Name</label>
+                        <input type="text" id="subjectName" class="form-input"
+                            placeholder="e.g. Java Programming, ML Workshop" maxlength="100" required>
+                    </div>
+                    <button class="btn btn-success btn-lg" id="startSessionBtn" onclick="startSession()"
+                        style="height: 46px;">
+                        🚀 Start New Session
+                    </button>
+                </div>
+            </div>
+            <div id="sessionActive" style="display: none;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <span class="badge badge-success" style="font-size: 14px; padding: 8px 20px;">
+                            <div class="pulse-dot green" style="display: inline-block; vertical-align: middle;"></div>
+                            LIVE SESSION
+                        </span>
+                        <div>
+                            <div style="font-size: 18px; font-weight: 700;" id="activeSubject"></div>
+                            <div style="color: var(--text-secondary); font-size: 13px; font-family: monospace;"
+                                id="sessionTimer"></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" id="endSessionBtn" onclick="endSession()"
+                        style="padding: 10px 24px;">
+                        ⏹ Stop Recording
+                    </button>
+                </div>
+            </div>
+            <div id="sessionStatus" style="margin-top: 10px;"></div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row fade-in">
+            <div class="stat-card">
+                <div class="stat-value blue" id="totalDetected">0</div>
+                <div class="stat-label">Faces Detected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value green" id="totalMarked">0</div>
+                <div class="stat-label">Marked This Session</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value purple" id="totalRegistered">0</div>
+                <div class="stat-label">Registered Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value yellow" id="fpsDisplay">0</div>
+                <div class="stat-label">Processing FPS</div>
+            </div>
+        </div>
+
+        <div class="grid-2 fade-in">
+            <!-- Left: Live Camera Feed -->
+            <div>
+                <div class="card">
+                    <div class="card-title"><span class="icon">📹</span> Live Feed</div>
+
+                    <div class="video-container" id="videoContainer">
+                        <video id="webcam" autoplay playsinline muted></video>
+                        <canvas id="overlayCanvas"
+                            style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+                        <div class="video-overlay" id="videoOverlay">
+                            Start a session to begin monitoring
+                        </div>
+                        <div class="video-status live" id="videoStatus" style="display:none;">
+                            <div class="pulse-dot green"></div>
+                            <span>LIVE</span>
+                        </div>
+                    </div>
+
+                    <!-- Tracker Info -->
+                    <div id="trackerInfo"
+                        style="margin-top: 12px; padding: 10px 14px; background: var(--bg-secondary); border-radius: var(--radius-sm); display: none;">
+                        <span style="color: var(--text-secondary); font-size: 13px;">
+                            🧠 Tracker: <strong id="trackerTracked">0</strong> faces being tracked |
+                            <strong id="trackerMarked">0</strong> marked this session
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Attendance Feed -->
+            <div>
+                <!-- Date Picker -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-title"><span class="icon">📅</span> Attendance Records</div>
+                    <div style="display: flex; gap: 12px; align-items: end;">
+                        <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                            <label class="form-label" for="dateSelect">Date</label>
+                            <input type="date" id="dateSelect" class="form-input" onchange="loadAttendance()">
+                        </div>
+                        <button class="btn btn-outline" onclick="loadAttendance()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Live Recognition Feed -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-title"><span class="icon">⚡</span> Live Recognition Feed</div>
+                    <div id="liveFeed" style="max-height: 240px; overflow-y: auto;">
+                        <div class="empty-state">
+                            <p style="font-size: 13px;">Start a session to see recognition events...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Table -->
+                <div class="card">
+                    <div class="card-title"><span class="icon">📋</span> Today's Attendance</div>
+                    <div id="attendanceTable">
+                        <div class="empty-state">
+                            <div class="icon">📭</div>
+                            <p>No attendance records yet for today.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── State ──
+        let mediaStream = null;
+        let monitorInterval = null;
+        let isMonitoring = false;
+        let sessionActive = false;
+        let sessionStartTime = null;
+        let sessionTimerInterval = null;
+        let totalDetectedCount = 0;
+        let markedSet = new Set();
+
+        // ── DOM Elements ──
+        const webcam = document.getElementById('webcam');
+        const overlay = document.getElementById('videoOverlay');
+        const videoStatus = document.getElementById('videoStatus');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+
+        // ── Set today's date ──
+        function setToday() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateSelect').value = today;
+        }
+
+        // ── Initialize webcam ──
+        async function initWebcam() {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: 'user' }
+                });
+                webcam.srcObject = mediaStream;
+                overlay.style.display = 'none';
+            } catch (err) {
+                overlay.textContent = '❌ Camera access denied.';
+                console.error('Webcam error:', err);
+            }
+        }
+
+        // ════════════════════════════════════════
+        // SESSION MANAGEMENT
+        // ════════════════════════════════════════
+
+        async function startSession() {
+            const subject = document.getElementById('subjectName').value.trim();
+            if (!subject) {
+                showSessionStatus('error', 'Please enter a subject name.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/session/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+                    body: JSON.stringify({ subject_name: subject }),
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    sessionActive = true;
+                    sessionStartTime = new Date();
+                    document.getElementById('sessionInactive').style.display = 'none';
+                    document.getElementById('sessionActive').style.display = 'block';
+                    document.getElementById('activeSubject').textContent = subject;
+                    showSessionStatus('success', `✅ ${data.message}`);
+
+                    // Reset counters
+                    totalDetectedCount = 0;
+                    markedSet.clear();
+                    document.getElementById('totalDetected').textContent = '0';
+                    document.getElementById('totalMarked').textContent = '0';
+                    document.getElementById('liveFeed').innerHTML =
+                        '<div class="empty-state"><p style="font-size: 13px;">Recognition events will appear here...</p></div>';
+
+                    // Start session timer
+                    sessionTimerInterval = setInterval(updateSessionTimer, 1000);
+
+                    // Start camera + monitoring
+                    await startMonitoring();
+                } else {
+                    showSessionStatus('error', `❌ ${data.detail || 'Could not start session.'}`);
+                }
+            } catch (err) {
+                showSessionStatus('error', `❌ Network error: ${err.message}`);
+            }
+        }
+
+        async function endSession() {
+            try {
+                const response = await fetch('/api/session/end', {
+                    method: 'POST',
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                const data = await response.json();
+
+                sessionActive = false;
+                clearInterval(sessionTimerInterval);
+                document.getElementById('sessionInactive').style.display = 'block';
+                document.getElementById('sessionActive').style.display = 'none';
+                document.getElementById('trackerInfo').style.display = 'none';
+
+                stopMonitoring();
+                loadAttendance();
+
+                if (data.success) {
+                    showSessionStatus('info',
+                        `📕 Session ended: ${data.session.subject_name} — ${data.session.attendance_count} students marked.`);
+                }
+            } catch (err) {
+                showSessionStatus('error', `❌ Network error: ${err.message}`);
+            }
+        }
+
+        function updateSessionTimer() {
+            if (!sessionStartTime) return;
+            const elapsed = Math.floor((Date.now() - sessionStartTime.getTime()) / 1000);
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            document.getElementById('sessionTimer').textContent =
+                `(${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')})`;
+        }
+
+        function showSessionStatus(type, message) {
+            const classes = { success: 'alert-success', error: 'alert-error', info: 'alert-info' };
+            document.getElementById('sessionStatus').innerHTML =
+                `<div class="alert ${classes[type]}" style="margin-top: 12px;">${message}</div>`;
+        }
+
+        // ════════════════════════════════════════
+        // MONITORING (CAMERA → BACKEND)
+        // ════════════════════════════════════════
+
+        async function startMonitoring() {
+            if (!mediaStream) {
+                await initWebcam();
+                if (!mediaStream) return;
+            }
+
+            isMonitoring = true;
+            videoStatus.style.display = 'flex';
+            document.getElementById('trackerInfo').style.display = 'block';
+
+            // Send frames every 500ms (~2 FPS)
+            monitorInterval = setInterval(sendFrame, 500);
+        }
+
+        function stopMonitoring() {
+            isMonitoring = false;
+            clearInterval(monitorInterval);
+            videoStatus.style.display = 'none';
+            clearCanvas();
+        }
+
+        async function sendFrame() {
+            if (!isMonitoring || !sessionActive) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = webcam.videoWidth;
+            canvas.height = webcam.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(webcam, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const b64 = dataUrl.split(',')[1];
+
+            const startTime = performance.now();
+
+            try {
+                const response = await fetch('/api/mark-attendance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+                    body: JSON.stringify({ frame: b64 }),
+                });
+
+                const data = await response.json();
+                const elapsed = performance.now() - startTime;
+                const fps = Math.round(1000 / elapsed);
+                document.getElementById('fpsDisplay').textContent = fps;
+
+                // If no active session, backend returns success=false
+                if (!data.session_active && data.success === false) {
+                    showSessionStatus('error', '⚠️ No active session on server. Please start a session.');
+                    return;
+                }
+
+                if (data.success) {
+                    totalDetectedCount += data.faces_detected;
+                    document.getElementById('totalDetected').textContent = totalDetectedCount;
+
+                    // Draw bounding boxes
+                    drawDetections(data.results);
+
+                    // Update live feed — only for meaningful events
+                    data.results.forEach(face => {
+                        if (face.status === 'marked') {
+                            markedSet.add(face.student_id);
+                            addLiveFeedEntry(face.name, face.confidence, 'marked');
+                            loadAttendance(); // refresh table
+                        } else if (face.status === 'tracking') {
+                            // Show tracking progress occasionally
+                            addLiveFeedEntry(
+                                `${face.name} (${face.frames_tracked}/${face.frames_needed})`,
+                                face.confidence,
+                                'tracking'
+                            );
+                        } else if (face.status === 'already_marked') {
+                            // Don't spam — only show occasionally
+                        } else if (face.status === 'cooldown') {
+                            // silent
+                        } else if (face.status === 'unknown') {
+                            addLiveFeedEntry('Unknown Face', 0, 'unknown');
+                        }
+                    });
+
+                    document.getElementById('totalMarked').textContent = markedSet.size;
+
+                    // Update tracker stats
+                    document.getElementById('trackerTracked').textContent =
+                        data.results.filter(f => f.status === 'tracking').length;
+                    document.getElementById('trackerMarked').textContent = markedSet.size;
+                }
+            } catch (err) {
+                console.error('Attendance error:', err);
+            }
+        }
+
+        // ════════════════════════════════════════
+        // BOUNDING BOX DRAWING
+        // ════════════════════════════════════════
+
+        function drawDetections(results) {
+            const canvas = overlayCanvas;
+            const video = webcam;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            results.forEach(face => {
+                if (face.box && face.box.length === 4) {
+                    const [x1, y1, x2, y2] = face.box;
+                    const w = x2 - x1;
+                    const h = y2 - y1;
+
+                    // Box color based on status
+                    let color = '#f87171'; // red for unknown
+                    let labelSuffix = '';
+                    if (face.status === 'marked') {
+                        color = '#34d399'; // green
+                        labelSuffix = ' ✅';
+                    } else if (face.status === 'already_marked' || face.status === 'cooldown') {
+                        color = '#fbbf24'; // yellow
+                        labelSuffix = ' ✓';
+                    } else if (face.status === 'tracking') {
+                        color = '#4f8cff'; // blue — tracking
+                        labelSuffix = ` (${face.frames_tracked || 0}/${face.frames_needed || 4})`;
+                    }
+
+                    // Draw dashed border for tracking, solid for others
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 3;
+                    if (face.status === 'tracking') {
+                        ctx.setLineDash([6, 4]);
+                    } else {
+                        ctx.setLineDash([]);
+                    }
+                    ctx.strokeRect(x1, y1, w, h);
+                    ctx.setLineDash([]);
+
+                    // Label
+                    ctx.fillStyle = color;
+                    const labelHeight = 22;
+                    ctx.fillRect(x1, y1 - labelHeight, w, labelHeight);
+                    ctx.fillStyle = '#000';
+                    ctx.font = 'bold 13px Inter, sans-serif';
+                    const conf = face.confidence > 0 ? ` ${(face.confidence * 100).toFixed(0)}%` : '';
+                    const label = face.name + conf + labelSuffix;
+                    ctx.fillText(label, x1 + 4, y1 - 6);
+                }
+            });
+        }
+
+        function clearCanvas() {
+            const ctx = overlayCanvas.getContext('2d');
+            ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+        }
+
+        // ════════════════════════════════════════
+        // LIVE FEED ENTRIES
+        // ════════════════════════════════════════
+
+        function addLiveFeedEntry(name, confidence, status) {
+            const feed = document.getElementById('liveFeed');
+            const emptyState = feed.querySelector('.empty-state');
+            if (emptyState) emptyState.remove();
+
+            const now = new Date().toLocaleTimeString();
+            let badgeClass = 'badge-danger';
+            let statusText = 'Unknown';
+            if (status === 'marked') { badgeClass = 'badge-success'; statusText = '✅ Marked'; }
+            else if (status === 'tracking') { badgeClass = 'badge-info'; statusText = '🔍 Tracking'; }
+            else if (status === 'already_marked') { badgeClass = 'badge-warning'; statusText = 'Already Marked'; }
+            else if (status === 'cooldown') { badgeClass = 'badge-warning'; statusText = '⏳ Cooldown'; }
+
+            const entry = document.createElement('div');
+            entry.className = 'alert';
+            entry.style.padding = '10px 14px';
+            entry.style.margin = '4px 0';
+            entry.style.fontSize = '13px';
+            entry.style.border = 'none';
+            entry.style.background = 'var(--bg-secondary)';
+            entry.style.color = 'var(--text-primary)';
+            entry.innerHTML = `
+            <span style="color: var(--text-muted); min-width: 70px;">${now}</span>
+            <strong>${escapeHtml(name)}</strong>
+            ${confidence > 0 ? `<span style="color: var(--text-secondary);">${(confidence * 100).toFixed(1)}%</span>` : ''}
+            <span class="badge ${badgeClass}" style="margin-left: auto;">${statusText}</span>
+        `;
+            feed.insertBefore(entry, feed.firstChild);
+
+            // Keep max 30 entries
+            while (feed.children.length > 30) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        // ════════════════════════════════════════
+        // ATTENDANCE TABLE
+        // ════════════════════════════════════════
+
+        async function loadAttendance() {
+            const date = document.getElementById('dateSelect').value;
+            if (!date) return;
+
+            const container = document.getElementById('attendanceTable');
+            try {
+                const response = await fetch(`/api/attendance/${date}`, { headers: { 'ngrok-skip-browser-warning': 'true' } });
+                const data = await response.json();
+
+                if (data.records && data.records.length > 0) {
+                    let html = '<div class="table-container"><table><thead><tr>';
+                    html += '<th>#</th><th>Name</th><th>Time</th><th>Confidence</th>';
+                    html += '</tr></thead><tbody>';
+
+                    data.records.forEach((r, i) => {
+                        const conf = (r.confidence * 100).toFixed(1);
+                        html += `<tr>
+                        <td style="color: var(--text-muted);">${i + 1}</td>
+                        <td><strong>${escapeHtml(r.name)}</strong></td>
+                        <td>${r.time}</td>
+                        <td><span class="badge badge-success">${conf}%</span></td>
+                    </tr>`;
+                    });
+
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No attendance records for this date.</p></div>';
+                }
+            } catch (err) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Could not load attendance.</p></div>';
+            }
+        }
+
+        // ── Load Stats ──
+        async function loadStats() {
+            try {
+                const response = await fetch('/admin/api/students', { headers: { 'ngrok-skip-browser-warning': 'true' } });
+                const data = await response.json();
+                document.getElementById('totalRegistered').textContent = data.length || 0;
+            } catch (err) {
+                console.error('Stats error:', err);
+            }
+        }
+
+        // ── Check if session already active on page load ──
+        async function checkSessionStatus() {
+            try {
+                const response = await fetch('/api/session/status', { headers: { 'ngrok-skip-browser-warning': 'true' } });
+                const data = await response.json();
+                if (data.active && data.session) {
+                    sessionActive = true;
+                    sessionStartTime = new Date(data.session.start_time);
+                    document.getElementById('sessionInactive').style.display = 'none';
+                    document.getElementById('sessionActive').style.display = 'block';
+                    document.getElementById('activeSubject').textContent = data.session.subject_name;
+                    sessionTimerInterval = setInterval(updateSessionTimer, 1000);
+                    updateSessionTimer();
+
+                    // Resume monitoring
+                    await startMonitoring();
+                }
+            } catch (err) {
+                console.error('Session check error:', err);
+            }
+        }
+
+        // ── Escape HTML ──
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ── Init ──
+        window.addEventListener('DOMContentLoaded', () => {
+            setToday();
+            initWebcam();
+            loadAttendance();
+            loadStats();
+            checkSessionStatus();
+        });
+    </script>
+
+</body>
+
+</html>

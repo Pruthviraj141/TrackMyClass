@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Register students for Face Recognition Attendance System">
+    <title>Register Student — Face Recognition Attendance</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <div class="logo-icon">🎯</div>
+                <div class="logo-text"><span>FaceAttend</span> System</div>
+            </a>
+            <div class="nav-links">
+                <a href="/" class="nav-link active">📝 Register</a>
+                <a href="/login" class="nav-link"
+                    style="background: rgba(52,211,153,0.1); color: var(--accent-green); border-radius: 8px; padding: 6px 16px;">🎓
+                    Student Login</a>
+                <a href="/login" class="nav-link"
+                    style="background: rgba(255,255,255,0.1); border-radius: 8px; padding: 6px 16px;">🔐 Admin Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Page Content ── -->
+    <div class="container">
+        <div class="page-header fade-in">
+            <h1 class="page-title">Student Registration</h1>
+            <p class="page-subtitle">Enter student details and capture face from multiple angles over 30 seconds for
+                accurate recognition.</p>
+        </div>
+
+        <div class="grid-2 fade-in">
+            <!-- Left: Form + Video -->
+            <div>
+                <!-- Student Info Card -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-title"><span class="icon">👤</span> Student Details</div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="studentName">Full Name</label>
+                        <input type="text" id="studentName" class="form-input" placeholder="Enter full name"
+                            maxlength="100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="rollNumber">Roll Number</label>
+                        <input type="text" id="rollNumber" class="form-input" placeholder="Enter roll number"
+                            maxlength="50" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="gender">Gender</label>
+                        <select id="gender" class="form-select" required>
+                            <option value="" disabled selected>Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="studentPassword">Create Password</label>
+                        <input type="password" id="studentPassword" class="form-input"
+                            placeholder="Min 4 characters — used for login" minlength="4" maxlength="100" required>
+                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">You'll use your
+                            <strong>Roll Number</strong> + this password to log in later.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Webcam Card -->
+                <div class="card">
+                    <div class="card-title"><span class="icon">📷</span> Face Capture</div>
+
+                    <div class="video-container" id="videoContainer">
+                        <video id="webcam" autoplay playsinline muted></video>
+                        <div class="video-overlay" id="videoOverlay">
+                            Click "Start Registration" to begin
+                        </div>
+                        <!-- Live Registration Commands -->
+                        <div class="registration-command" id="regCommand" style="display:none;">
+                            Look Straight 😐
+                        </div>
+                        <div class="video-status recording" id="videoStatus" style="display:none;">
+                            <div class="pulse-dot red"></div>
+                            <span>RECORDING</span>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="progress-container" id="progressContainer" style="display:none;">
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="progressBar"></div>
+                        </div>
+                        <div class="progress-label">
+                            <span id="progressText">Capturing faces...</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Timer -->
+                    <div class="timer-display" id="timer" style="display:none;">30</div>
+
+                    <!-- Buttons -->
+                    <div style="margin-top: 20px; display: flex; gap: 12px;">
+                        <button class="btn btn-primary btn-lg btn-block" id="startBtn" onclick="startRegistration()">
+                            🚀 Start Registration
+                        </button>
+                        <button class="btn btn-danger btn-lg" id="stopBtn" onclick="stopRegistration()"
+                            style="display:none;">
+                            ⏹ Stop
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Status & Instructions -->
+            <div>
+                <!-- Instructions Card -->
+                <div class="card" style="margin-bottom: 24px;">
+                    <div class="card-title"><span class="icon">📋</span> Instructions</div>
+                    <ul style="color: var(--text-secondary); font-size: 14px; line-height: 2; padding-left: 20px;">
+                        <li>Fill in your <strong style="color: var(--text-primary);">name</strong>, <strong
+                                style="color: var(--text-primary);">roll number</strong>, and <strong
+                                style="color: var(--text-primary);">gender</strong></li>
+                        <li>Click <strong style="color: var(--accent-blue);">Start Registration</strong></li>
+                        <li>Look straight at the camera first</li>
+                        <li>Slowly turn your head <strong style="color: var(--text-primary);">left and right</strong>
+                        </li>
+                        <li>Tilt your head <strong style="color: var(--text-primary);">up and down</strong> slightly
+                        </li>
+                        <li>Move slightly <strong style="color: var(--text-primary);">closer and farther</strong></li>
+                        <li>Keep expressions natural</li>
+                        <li>Ensure good lighting on your face</li>
+                    </ul>
+                </div>
+
+                <!-- Status Card -->
+                <div class="card" id="statusCard" style="margin-bottom: 24px;">
+                    <div class="card-title"><span class="icon">📊</span> Registration Status</div>
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-value blue" id="capturedFrames">0</div>
+                            <div class="stat-label">Frames Captured</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value green" id="facesDetected">0</div>
+                            <div class="stat-label">Faces Detected</div>
+                        </div>
+                    </div>
+                    <div id="statusMessage"></div>
+                </div>
+
+                <!-- Registered Students -->
+                <div class="card">
+                    <div class="card-title"><span class="icon">👥</span> Registered Students</div>
+                    <div id="studentsList">
+                        <div class="empty-state">
+                            <div class="icon">📭</div>
+                            <p>Loading students...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── State ──
+        let mediaStream = null;
+        let captureInterval = null;
+        let timerInterval = null;
+        let frames = [];
+        let timeRemaining = 30;
+        let isRecording = false;
+
+        // ── DOM Elements ──
+        const webcam = document.getElementById('webcam');
+        const overlay = document.getElementById('videoOverlay');
+        const statusEl = document.getElementById('videoStatus');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        const timerEl = document.getElementById('timer');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const regCommandEl = document.getElementById('regCommand');
+        const capturedFramesEl = document.getElementById('capturedFrames');
+        const facesDetectedEl = document.getElementById('facesDetected');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // ── Initialize webcam ──
+        async function initWebcam() {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: 'user' }
+                });
+                webcam.srcObject = mediaStream;
+                overlay.style.display = 'none';
+            } catch (err) {
+                overlay.textContent = '❌ Camera access denied. Please enable camera permissions.';
+                console.error('Webcam error:', err);
+            }
+        }
+
+        // ── Capture a frame ──
+        function captureFrame() {
+            const canvas = document.createElement('canvas');
+            canvas.width = webcam.videoWidth;
+            canvas.height = webcam.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(webcam, 0, 0);
+            // Get base64 without prefix
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            const b64 = dataUrl.split(',')[1];
+            frames.push(b64);
+            capturedFramesEl.textContent = frames.length;
+        }
+
+        // ── Validate form ──
+        function validateForm() {
+            const name = document.getElementById('studentName').value.trim();
+            const roll = document.getElementById('rollNumber').value.trim();
+            const gender = document.getElementById('gender').value;
+            const password = document.getElementById('studentPassword').value;
+
+            if (!name || name.length < 2) {
+                showStatus('error', 'Please enter a valid name (at least 2 characters).');
+                return false;
+            }
+            if (!roll) {
+                showStatus('error', 'Please enter a roll number.');
+                return false;
+            }
+            if (!gender) {
+                showStatus('error', 'Please select a gender.');
+                return false;
+            }
+            if (!password || password.length < 4) {
+                showStatus('error', 'Please enter a password (at least 4 characters).');
+                return false;
+            }
+            return true;
+        }
+
+        // ── Start Registration ──
+        async function startRegistration() {
+            if (!validateForm()) return;
+
+            if (!mediaStream) {
+                await initWebcam();
+                if (!mediaStream) return;
+            }
+
+            isRecording = true;
+            frames = [];
+            timeRemaining = 30;
+            capturedFramesEl.textContent = '0';
+            facesDetectedEl.textContent = '-';
+
+            // UI updates
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-flex';
+            statusEl.style.display = 'flex';
+            progressContainer.style.display = 'block';
+            timerEl.style.display = 'block';
+            timerEl.textContent = '30';
+            regCommandEl.style.display = 'block';
+            regCommandEl.textContent = 'Look Straight 😐';
+            showStatus('info', '🔄 Recording your face from multiple angles...');
+
+            // Capture frame every second
+            captureInterval = setInterval(() => {
+                if (isRecording) captureFrame();
+            }, 1000);
+
+            // Countdown timer
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                timerEl.textContent = timeRemaining;
+                const percent = Math.round(((30 - timeRemaining) / 30) * 100);
+                progressBar.style.width = percent + '%';
+                progressPercent.textContent = percent + '%';
+
+                if (timeRemaining <= 10) {
+                    timerEl.style.color = 'var(--accent-red)';
+                }
+
+                // Update commands based on phase
+                if (timeRemaining > 25) {
+                    regCommandEl.textContent = 'Look Straight 😐';
+                    regCommandEl.style.color = ''; // Reset color
+                } else if (timeRemaining > 20) {
+                    regCommandEl.textContent = 'Look Left 👈';
+                    regCommandEl.style.color = 'var(--accent-blue)';
+                } else if (timeRemaining > 15) {
+                    regCommandEl.textContent = 'Look Right 👉';
+                    regCommandEl.style.color = 'var(--accent-blue)';
+                } else if (timeRemaining > 10) {
+                    regCommandEl.textContent = 'Look Up 🆙';
+                    regCommandEl.style.color = 'var(--accent-purple)';
+                } else if (timeRemaining > 5) {
+                    regCommandEl.textContent = 'Look Down ⬇️';
+                    regCommandEl.style.color = 'var(--accent-purple)';
+                } else {
+                    regCommandEl.textContent = 'Smile! 😊';
+                    regCommandEl.style.color = 'var(--accent-green)';
+                }
+
+                if (timeRemaining <= 0) {
+                    finishRegistration();
+                }
+            }, 1000);
+        }
+
+        // ── Stop Registration Early ──
+        function stopRegistration() {
+            if (frames.length >= 5) {
+                finishRegistration();
+            } else {
+                showStatus('error', `Need at least 5 frames. Currently have ${frames.length}.`);
+            }
+        }
+
+        // ── Finish & Submit ──
+        async function finishRegistration() {
+            isRecording = false;
+            clearInterval(captureInterval);
+            clearInterval(timerInterval);
+
+            statusEl.style.display = 'none';
+            stopBtn.style.display = 'none';
+            timerEl.style.display = 'none';
+            regCommandEl.style.display = 'none';
+
+            if (frames.length < 5) {
+                showStatus('error', `Only ${frames.length} frames captured. Need at least 5. Try again.`);
+                startBtn.style.display = 'inline-flex';
+                return;
+            }
+
+            showStatus('info', `🔄 Processing ${frames.length} frames... Please wait.`);
+            progressText.textContent = 'Uploading & processing...';
+            startBtn.disabled = true;
+
+            const payload = {
+                name: document.getElementById('studentName').value.trim(),
+                roll_number: document.getElementById('rollNumber').value.trim(),
+                gender: document.getElementById('gender').value,
+                password: document.getElementById('studentPassword').value,
+                frames: frames,
+            };
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showStatus('success', `✅ ${data.message}`);
+                    facesDetectedEl.textContent = frames.length;
+                    progressBar.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    progressText.textContent = 'Registration complete!';
+                    // Reset form
+                    document.getElementById('studentName').value = '';
+                    document.getElementById('rollNumber').value = '';
+                    document.getElementById('gender').selectedIndex = 0;
+                    loadStudents();
+                } else {
+                    showStatus('error', `❌ ${data.detail || 'Registration failed.'}`);
+                }
+            } catch (err) {
+                showStatus('error', `❌ Network error: ${err.message}`);
+            }
+
+            startBtn.style.display = 'inline-flex';
+            startBtn.disabled = false;
+            frames = [];
+            timerEl.style.color = 'var(--accent-blue)';
+        }
+
+        // Delete functionality removed — only admin can manage students
+
+        // ── Show Status Message ──
+        function showStatus(type, message) {
+            const classes = { success: 'alert-success', error: 'alert-error', info: 'alert-info' };
+            statusMessage.innerHTML = `<div class="alert ${classes[type]}">${message}</div>`;
+        }
+
+        // ── Load Registered Students ──
+        async function loadStudents() {
+            const container = document.getElementById('studentsList');
+            try {
+                const response = await fetch('/api/students');
+                const data = await response.json();
+
+                if (data.students && data.students.length > 0) {
+                    let html = '<div class="table-container"><table><thead><tr>';
+                    html += '<th>Name</th><th>Roll No.</th><th>Gender</th><th>Registered</th>';
+                    html += '</tr></thead><tbody>';
+                    data.students.forEach(s => {
+                        const date = new Date(s.created_at).toLocaleDateString();
+                        html += `<tr>
+                        <td><strong>${escapeHtml(s.name)}</strong></td>
+                        <td>${escapeHtml(s.roll_number)}</td>
+                        <td><span class="badge badge-info">${escapeHtml(s.gender)}</span></td>
+                        <td style="color: var(--text-secondary);">${date}</td>
+                    </tr>`;
+                    });
+
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No students registered yet.</p></div>';
+                }
+            } catch (err) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Could not load students.</p></div>';
+            }
+        }
+
+        // ── Escape HTML ──
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ── Init ──
+        window.addEventListener('DOMContentLoaded', () => {
+            initWebcam();
+            loadStudents();
+        });
+    </script>
+
+</body>
+
+</html>

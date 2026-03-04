@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Students — Admin Panel</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .delete-btn {
+            background: rgba(248, 113, 113, 0.1);
+            color: var(--accent-red);
+            padding: 6px 14px;
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .delete-btn:hover {
+            background: var(--accent-red);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .manage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .search-box {
+            background: #1a1e2b;
+            border: 1px solid #2d334a;
+            border-radius: 8px;
+            padding: 8px 16px;
+            color: #fff;
+            width: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="/admin/dashboard" class="logo">
+                <div class="logo-icon">🎯</div>
+                <div class="logo-text"><span>FaceAttend</span> Admin</div>
+            </a>
+            <div class="nav-links">
+                <a href="/admin/dashboard" class="nav-link">📊 Dashboard</a>
+                <a href="/monitor" class="nav-link">🖥️ Monitor</a>
+                <a href="/admin/manage-students" class="nav-link active">👥 Students</a>
+                <a href="/logout" class="nav-link"
+                    style="background: var(--accent-red-dim); color: var(--accent-red); border-radius: 8px; padding: 6px 16px;">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="manage-header fade-in">
+            <h1>Students Management</h1>
+            <input type="text" id="studentSearch" class="search-box" placeholder="🔍 Search name or roll number..."
+                onkeyup="filterStudents()">
+        </div>
+
+        <div class="card fade-in">
+            <div class="card-title">
+                <span class="icon">👥</span> All Registered Students
+            </div>
+            <div id="studentListContainer">
+                <div class="empty-state">
+                    <p>Loading students list...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allStudents = [];
+
+        async function loadStudents() {
+            try {
+                const response = await fetch('/admin/api/students');
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
+                allStudents = await response.json();
+                renderStudents(allStudents);
+            } catch (err) {
+                console.error('Error loading students:', err);
+            }
+        }
+
+        function renderStudents(students) {
+            const container = document.getElementById('studentListContainer');
+
+            if (students.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">👥</div><p>No students registered yet.</p></div>';
+                return;
+            }
+
+            let html = '<div class="table-container"><table><thead><tr>';
+            html += '<th>Name</th><th>Roll Number</th><th>Gender</th><th>Registered On</th><th>Action</th>';
+            html += '</tr></thead><tbody>';
+
+            students.forEach(s => {
+                const date = new Date(s.created_at).toLocaleDateString();
+                html += `<tr>
+                    <td><strong>${escapeHtml(s.name)}</strong></td>
+                    <td class="roll-number">${escapeHtml(s.roll_number)}</td>
+                    <td>${escapeHtml(s.gender)}</td>
+                    <td style="color: var(--text-muted);">${date}</td>
+                    <td>
+                        <button class="delete-btn" onclick="confirmDelete('${s.student_id}', '${escapeHtml(s.name)}')">
+                            🗑️ Remove
+                        </button>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        function filterStudents() {
+            const query = document.getElementById('studentSearch').value.toLowerCase();
+            const filtered = allStudents.filter(s =>
+                s.name.toLowerCase().includes(query) ||
+                s.roll_number.toLowerCase().includes(query)
+            );
+            renderStudents(filtered);
+        }
+
+        async function confirmDelete(id, name) {
+            if (confirm(`ARE YOU SURE? This will PERMANENTLY delete student "${name}" and ALL their attendance records from the backend and Firebase.`)) {
+                try {
+                    const response = await fetch(`/api/students/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        alert('Student removed successfully.');
+                        loadStudents(); // Reload list
+                    } else {
+                        const err = await response.json();
+                        alert('Error deleting student: ' + (err.detail || 'Unknown error'));
+                    }
+                } catch (err) {
+                    alert('Network error while deleting student.');
+                }
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', loadStudents);
+    </script>
+</body>
+
+</html>
