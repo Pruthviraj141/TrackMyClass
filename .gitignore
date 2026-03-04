@@ -11,7 +11,8 @@ attendance_system\.env
 # Virtual environment
 venv/
 .venv/
-
+venv
+venv\Lib\site-packages
 # Firebase credentials
 firebase.json
 
