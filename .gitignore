@@ -15,10 +15,12 @@ venv
 venv\Lib\site-packages
 # Firebase credentials
 firebase.json
-
+webapp_logs/
+*.log
 # Database
 *.db
-
+webapp_logs/
+*.log
 # IDE
 .vscode/
 .idea/
