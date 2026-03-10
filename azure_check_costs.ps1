@@ -48,3 +48,5 @@ if ($groups) {
 Write-Host ""
 Write-Host "TIP: If you see ANY resources above, they might be using your $100 credits." -ForegroundColor Yellow
 Write-Host "To clear them, run: az group delete --name YOUR_GROUP_NAME --yes" -ForegroundColor Gray
+
+
