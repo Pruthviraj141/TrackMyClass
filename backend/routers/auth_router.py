@@ -23,7 +23,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     """Unified login page with Admin / Student tabs."""
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="login.html")
 
 
 @router.post("/login")
@@ -45,8 +45,9 @@ async def login(
             return response
 
         return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "error": "Invalid admin credentials.", "tab": "admin"},
+            request=request,
+            name="login.html",
+            context={"request": request, "error": "Invalid admin credentials.", "tab": "admin"},
         )
 
     elif login_type == "student":
@@ -65,14 +66,16 @@ async def login(
             return response
 
         return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "error": "Invalid roll number or password.", "tab": "student"},
+            request=request,
+            name="login.html",
+            context={"request": request, "error": "Invalid roll number or password.", "tab": "student"},
         )
 
     # Fallback
     return templates.TemplateResponse(
-        "login.html",
-        {"request": request, "error": "Invalid login type."},
+        request=request,
+        name="login.html",
+        context={"request": request, "error": "Invalid login type."},
     )
 
 

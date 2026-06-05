@@ -98,7 +98,7 @@ app.include_router(student_router.router)
 @app.get("/")
 async def registration_page(request: Request):
     """Serve the student registration page (public)."""
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="register.html")
 
 
 @app.get("/monitor")
@@ -108,5 +108,5 @@ async def monitoring_page(request: Request):
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse("monitor.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="monitor.html")
 

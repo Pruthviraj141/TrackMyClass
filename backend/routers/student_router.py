@@ -33,7 +33,7 @@ async def student_dashboard(request: Request):
     student = get_current_student(request)
     if not student:
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse("student_dashboard.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="student_dashboard.html")
 
 
 @router.get("/api/my-profile")

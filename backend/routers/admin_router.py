@@ -34,7 +34,7 @@ async def admin_dashboard(request: Request):
     if not user:
         return RedirectResponse(url="/login", status_code=303)
         
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="dashboard.html")
 
 @router.get("/manage-students", response_class=HTMLResponse)
 async def manage_students_page(request: Request):
@@ -42,7 +42,7 @@ async def manage_students_page(request: Request):
     user = get_current_user(request)
     if not user:
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse("manage_students.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="manage_students.html")
 
 @router.get("/api/students")
 async def list_students(admin: str = Depends(get_admin_user)):
