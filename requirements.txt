@@ -5,7 +5,7 @@ opencv-python-headless
 torch
 torchvision
 facenet-pytorch
-numpy<2.0.0
+numpy
 firebase-admin
 pandas
 python-multipart
