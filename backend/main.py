@@ -101,6 +101,12 @@ async def registration_page(request: Request):
     return templates.TemplateResponse(request=request, name="register.html")
 
 
+@app.get("/health")
+async def health_check():
+    """Health check for load balancers."""
+    return {"status": "healthy"}
+
+
 @app.get("/monitor")
 async def monitoring_page(request: Request):
     """Serve the live monitoring page (admin-only)."""

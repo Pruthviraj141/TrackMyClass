@@ -5,10 +5,13 @@ vectorized numpy operations for fast comparison on i5 CPU.
 Avoids database queries on every frame.
 """
 
+import logging
 import numpy as np
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 from backend.config import SIMILARITY_THRESHOLD, DATABASE_MODE
+
+logger = logging.getLogger(__name__)
 
 
 # ── Module-level cache ──
@@ -39,29 +42,34 @@ class StudentEmbeddingCache:
         else:
             from backend.database.sqlite_service import get_all_students
 
-        students = get_all_students()
+        try:
+            students = get_all_students()
 
-        self.student_ids = []
-        self.student_names = []
-        embeddings = []
+            self.student_ids = []
+            self.student_names = []
+            embeddings = []
 
-        for s in students:
-            self.student_ids.append(s["student_id"])
-            self.student_names.append(s["name"])
-            emb = np.array(s["embedding"], dtype=np.float32)
-            # Normalize
-            norm = np.linalg.norm(emb)
-            if norm > 0:
-                emb = emb / norm
-            embeddings.append(emb)
+            for s in students:
+                self.student_ids.append(s["student_id"])
+                self.student_names.append(s["name"])
+                emb = np.array(s["embedding"], dtype=np.float32)
+                # Normalize
+                norm = np.linalg.norm(emb)
+                if norm > 0:
+                    emb = emb / norm
+                embeddings.append(emb)
 
-        if embeddings:
-            self.embedding_matrix = np.stack(embeddings, axis=0)  # (N, 512)
-        else:
+            if embeddings:
+                self.embedding_matrix = np.stack(embeddings, axis=0)  # (N, 512)
+            else:
+                self.embedding_matrix = None
+
+            self._loaded = True
+            logger.info(f"📦 Loaded {len(self.student_ids)} student embeddings into cache.")
+        except Exception as e:
+            logger.error(f"❌ Failed to load student embeddings: {e}")
             self.embedding_matrix = None
-
-        self._loaded = True
-        print(f"📦 Loaded {len(self.student_ids)} student embeddings into cache.")
+            self._loaded = False
 
     def is_loaded(self) -> bool:
         return self._loaded
@@ -69,8 +77,8 @@ class StudentEmbeddingCache:
     def find_match(
         self,
         embedding: np.ndarray,
-        threshold: float = None,
-    ) -> Optional[dict]:
+        threshold: Optional[float] = None,
+    ) -> Optional[Dict[str, Any]]:
         """
         Find the best matching student using vectorized cosine similarity.
 

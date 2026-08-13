@@ -221,15 +221,16 @@ body {
 .form-input,
 .form-select {
     width: 100%;
-    padding: 12px 16px;
+    padding: 14px 16px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
-    font-size: 15px;
+    font-size: 16px;
     font-family: inherit;
     transition: var(--transition);
     outline: none;
+    -webkit-appearance: none;
 }
 
 .form-input:focus,
@@ -257,15 +258,21 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 28px;
+    padding: 14px 28px;
     border-radius: var(--radius-sm);
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
     border: none;
     transition: var(--transition);
     text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+    transform: scale(0.98) !important;
+    opacity: 0.9;
 }
 
 .btn-primary {
@@ -324,8 +331,8 @@ body {
 }
 
 .btn-lg {
-    padding: 14px 36px;
-    font-size: 16px;
+    padding: 16px 36px;
+    font-size: 18px;
 }
 
 .btn-block {
@@ -338,8 +345,40 @@ body {
     border-radius: var(--radius-md);
     overflow: hidden;
     background: #000;
+    width: 100%;
+    max-height: 70vh; /* Prevents overflow on mobile screens */
     aspect-ratio: 4/3;
     border: 2px solid var(--border-color);
+}
+
+@media (max-width: 640px) {
+    .video-container {
+        aspect-ratio: 3/4; /* Better portrait fit for mobile devices */
+    }
+}
+
+.camera-switch-btn {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: var(--transition);
+    z-index: 20;
+}
+
+.camera-switch-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.05);
 }
 
 .video-container video,
@@ -695,22 +734,76 @@ tbody tr:hover {
     }
 }
 
-/* ── Responsive ── */
-@media (max-width: 640px) {
-    .container {
-        padding: 16px;
+/* ── Responsive & Mobile UI ── */
+@media (max-width: 768px) {
+    /* Transform Top Navbar to Bottom Navigation */
+    .navbar {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        width: 100%;
+        border-bottom: none;
+        border-top: 1px solid var(--border-color);
+        padding: 12px 0;
+        background: rgba(26, 29, 39, 0.9);
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
+        padding-bottom: env(safe-area-inset-bottom, 12px); /* For iOS Home Indicator */
     }
-
-    .page-title {
-        font-size: 24px;
-    }
-
-    .card {
-        padding: 20px;
+    
+    .navbar .logo {
+        display: none;
     }
 
     .navbar .container {
+        flex-direction: row;
+        gap: 8px;
+        padding: 0 12px;
+    }
+    
+    .nav-links {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: space-around;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .nav-link {
+        flex: 1;
+        text-align: center;
+        padding: 10px 4px;
+        font-size: 12px;
+        display: flex;
         flex-direction: column;
-        gap: 12px;
+        align-items: center;
+        gap: 6px;
+        border-radius: var(--radius-md);
+        white-space: nowrap;
+    }
+    
+    body {
+        padding-bottom: 90px;
+    }
+    
+    .container {
+        padding: 12px;
+    }
+
+    .page-title {
+        font-size: 26px;
+    }
+
+    .card {
+        padding: 16px;
+        border-radius: var(--radius-md);
+    }
+    
+    .grid-2 {
+        gap: 16px;
+    }
+    
+    .stats-row {
+        grid-template-columns: 1fr 1fr;
     }
 }

@@ -3,9 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Live face recognition attendance monitoring with session control">
-    <title>Live Monitor — Face Recognition Attendance</title>
+    <title>TrackMyClass | Live Monitor</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 
@@ -110,6 +110,9 @@
                             <div class="pulse-dot green"></div>
                             <span>LIVE</span>
                         </div>
+                        <button class="camera-switch-btn" id="flipCameraBtn" onclick="flipCamera()" title="Flip Camera">
+                            🔄
+                        </button>
                     </div>
 
                     <!-- Tracker Info -->
@@ -171,12 +174,14 @@
         let sessionTimerInterval = null;
         let totalDetectedCount = 0;
         let markedSet = new Set();
+        let currentFacingMode = 'user'; // default to front camera
 
         // ── DOM Elements ──
         const webcam = document.getElementById('webcam');
         const overlay = document.getElementById('videoOverlay');
         const videoStatus = document.getElementById('videoStatus');
         const overlayCanvas = document.getElementById('overlayCanvas');
+        const flipCameraBtn = document.getElementById('flipCameraBtn');
 
         // ── Set today's date ──
         function setToday() {
@@ -186,9 +191,12 @@
 
         // ── Initialize webcam ──
         async function initWebcam() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
             try {
                 mediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 640, height: 480, facingMode: 'user' }
+                    video: { facingMode: currentFacingMode }
                 });
                 webcam.srcObject = mediaStream;
                 overlay.style.display = 'none';
@@ -196,6 +204,12 @@
                 overlay.textContent = '❌ Camera access denied.';
                 console.error('Webcam error:', err);
             }
+        }
+
+        // ── Flip Camera ──
+        async function flipCamera() {
+            currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+            await initWebcam();
         }
 
         // ════════════════════════════════════════

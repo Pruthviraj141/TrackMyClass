@@ -65,7 +65,7 @@ def get_student_by_id(student_id: str) -> Optional[dict]:
 def get_student_by_roll_number(roll_number: str) -> Optional[dict]:
     """Get a student by their roll number (for login)."""
     db = _get_db()
-    docs = db.collection("students").where("roll_number", "==", roll_number).limit(1).stream()
+    docs = db.collection("students").where(filter=firestore.FieldFilter("roll_number", "==", roll_number)).limit(1).stream()
     for doc in docs:
         return doc.to_dict()
     return None
@@ -76,7 +76,7 @@ def delete_student(student_id: str) -> bool:
     db = _get_db()
     
     # 1. Delete all attendance records for this student
-    attendance_refs = db.collection("attendance").where("student_id", "==", student_id).stream()
+    attendance_refs = db.collection("attendance").where(filter=firestore.FieldFilter("student_id", "==", student_id)).stream()
     for doc in attendance_refs:
         doc.reference.delete()
         
@@ -136,7 +136,7 @@ def get_attendance_by_date(date: str) -> list:
         List of attendance dicts
     """
     db = _get_db()
-    docs = db.collection("attendance").where("date", "==", date).stream()
+    docs = db.collection("attendance").where(filter=firestore.FieldFilter("date", "==", date)).stream()
     records = []
     for doc in docs:
         data = doc.to_dict()
@@ -150,7 +150,7 @@ def get_attendance_by_session_id(session_id: str) -> list:
     Get all attendance records for a specific session.
     """
     db = _get_db()
-    docs = db.collection("attendance").where("session_id", "==", session_id).stream()
+    docs = db.collection("attendance").where(filter=firestore.FieldFilter("session_id", "==", session_id)).stream()
     records = []
     for doc in docs:
         data = doc.to_dict()
@@ -174,8 +174,8 @@ def is_already_marked(student_id: str, date: str) -> bool:
     db = _get_db()
     docs = (
         db.collection("attendance")
-        .where("student_id", "==", student_id)
-        .where("date", "==", date)
+        .where(filter=firestore.FieldFilter("student_id", "==", student_id))
+        .where(filter=firestore.FieldFilter("date", "==", date))
         .limit(1)
         .stream()
     )

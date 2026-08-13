@@ -1,33 +1,83 @@
-# Environment secrets
+# ───────────────────────────────────────────────────────────
+# Environment & Secrets
+# ───────────────────────────────────────────────────────────
 .env
+.env.*
+!.env.example
+firebase.json
+*.pem
+*.key
+*.cert
+rootkey.pem
 
-# Python
+# ───────────────────────────────────────────────────────────
+# Python & Virtual Environments
+# ───────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
-*.egg-info/
-dist/
+*$py.class
+*.so
 build/
-attendance_system\.env
-# Virtual environment
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
 venv/
 .venv/
-venv
-venv\Lib\site-packages
-# Firebase credentials
-firebase.json
-webapp_logs/
-*.log
-# Database
+env/
+
+# ───────────────────────────────────────────────────────────
+# Machine Learning & Computer Vision
+# ───────────────────────────────────────────────────────────
+*.pt
+*.pth
+*.onnx
+*.weights
+checkpoints/
+models/weights/
+
+# ───────────────────────────────────────────────────────────
+# Database & Logs
+# ───────────────────────────────────────────────────────────
 *.db
+*.sqlite
+*.sqlite3
 webapp_logs/
 *.log
-# IDE
+logs/
+
+# ───────────────────────────────────────────────────────────
+# Generated Files (Reports, Media, Exports)
+# ───────────────────────────────────────────────────────────
+reports/
+exports/
+temp/
+tmp/
+*.xlsx
+*.pdf
+
+# ───────────────────────────────────────────────────────────
+# IDEs, OS & Tooling
+# ───────────────────────────────────────────────────────────
 .vscode/
 .idea/
-
-# OS
+*.swp
+*.swo
 .DS_Store
 Thumbs.db
-
-# Reports (generated at runtime)
-reports/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/

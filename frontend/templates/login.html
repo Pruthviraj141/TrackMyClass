@@ -3,8 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login — Face Recognition Attendance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TrackMyClass | Login</title>
     <link rel="stylesheet" href="/static/styles.css">
     <style>
         :root {
@@ -283,7 +283,7 @@
                         <div class="input-wrapper">
                             <span class="input-icon">👤</span>
                             <input type="text" id="admin-username" name="username" class="login-input"
-                                placeholder="admin" required autofocus>
+                                placeholder="admin" required autofocus autocomplete="username" autocapitalize="none">
                         </div>
                     </div>
 
@@ -292,7 +292,7 @@
                         <div class="input-wrapper">
                             <span class="input-icon">🔑</span>
                             <input type="password" id="admin-password" name="password" class="login-input"
-                                placeholder="••••••••" required>
+                                placeholder="••••••••" required autocomplete="current-password">
                         </div>
                     </div>
 
@@ -312,7 +312,7 @@
                         <div class="input-wrapper">
                             <span class="input-icon">🎓</span>
                             <input type="text" id="student-roll" name="roll_number" class="login-input"
-                                placeholder="e.g. CS2024001" required>
+                                placeholder="e.g. CS2024001" required autocomplete="username" autocapitalize="characters" inputmode="text">
                         </div>
                     </div>
 
@@ -321,7 +321,7 @@
                         <div class="input-wrapper">
                             <span class="input-icon">🔑</span>
                             <input type="password" id="student-password" name="password" class="login-input"
-                                placeholder="••••••••" required>
+                                placeholder="••••••••" required autocomplete="current-password">
                         </div>
                     </div>
 

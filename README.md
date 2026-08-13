@@ -78,14 +78,28 @@ Open your browser and navigate to `http://localhost:8000` to access the login pa
 
 ---
 
-## ☁️ Deployment (Microsoft Azure Web App Container)
+## ☁️ Deployment (AWS EC2)
 
-This application can easily be deployed on **Azure Student Tier** using Docker.
+This application can easily be deployed on an **AWS EC2** instance using Docker or systemd. Due to PyTorch and OpenCV's memory footprint, a **t3.large** instance (or larger) is recommended.
 
-1. Create an **Azure Container Registry (ACR)** inside the Azure Portal.
-2. Link your GitHub repository to Azure App Services.
-3. Select **Linux Container** and choose the `Basic B1` pricing tier (Requires at least 1.75GB RAM to safely load PyTorch).
-4. Do **not** commit your `.env` or `firebase.json` text files. Input your environment variables securely directly inside the Azure App Service Configuration menu.
+### Prerequisites
+- An EC2 instance running Ubuntu 22.04+ (t3.large minimum).
+- Security Group rules: Allow inbound on ports **22 (SSH)**, **80 (HTTP)**, and **443 (HTTPS)**. Do **not** expose port 8000 externally.
+- A domain name pointing to your EC2 public IP.
+
+### Deployment Steps (via Docker)
+
+1. SSH into your EC2 instance and clone the repository.
+2. Install Docker and Docker Compose.
+3. Copy `.env.example` to `.env` and fill in your secrets.
+4. Run the application:
+   ```bash
+   docker-compose up -d --build
+   ```
+5. Install **Nginx** and configure the reverse proxy using the provided `nginx.conf`.
+6. (Crucial for Mobile) Run **Certbot** to provision an SSL certificate. Mobile browsers require HTTPS to allow camera access via `getUserMedia`.
+
+*Note: Avoid committing `.env` or `firebase.json` text files. Use secure secret management or environment variables.*
 
 ---
 

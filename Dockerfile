@@ -1,36 +1,22 @@
-# Base image
 FROM python:3.10-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV REPORTS_DIR=/app/reports
-ENV PYTHONPATH=/app
-
-# Install system dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    libgl1 \
-    libglib2.0-0 \
-    pkg-config \
-    libhdf5-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
 WORKDIR /app
 
-# Install Python dependencies
+# Install system dependencies for OpenCV and FaceNet
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
+# Install gunicorn
+RUN pip install --no-cache-dir gunicorn
+
 COPY . .
 
-# Create reports directory
-RUN mkdir -p /app/reports && chmod -R 777 /app/reports
-
-# Expose port
 EXPOSE 8000
 
-# Start Uvicorn server
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use Gunicorn with Uvicorn workers for production
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "120", "backend.main:app"]
