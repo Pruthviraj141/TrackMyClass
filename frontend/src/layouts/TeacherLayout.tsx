@@ -20,15 +20,33 @@ export default function TeacherLayout() {
     <div className="min-h-screen flex flex-col bg-background">
       {!isLive && (
         <header className="pt-6 pb-2 px-5 sticky top-0 z-30 bg-background/70 backdrop-blur-xl flex items-center justify-between">
-          {/* Logo & Title */}
-          <div className="flex items-center gap-3">
-            <svg className="w-8 h-8 text-primary shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none"/>
-            </svg>
-            <div className="flex flex-col">
-              <span className="font-bold tracking-tight text-lg leading-tight text-foreground">TrackMyClass</span>
-              <span className="text-sm text-muted-foreground font-medium leading-none">Teacher</span>
+          {/* Logo & Title & Desktop Nav */}
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-3">
+              <svg className="w-8 h-8 text-primary shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none"/>
+              </svg>
+              <div className="flex flex-col">
+                <span className="font-bold tracking-tight text-lg leading-tight text-foreground">TrackMyClass</span>
+                <span className="text-sm text-muted-foreground font-medium leading-none">Teacher</span>
+              </div>
             </div>
+
+            {/* Desktop Navigation Links (Hidden on Mobile) */}
+            <nav className="hidden md:flex items-center gap-1 bg-muted/40 p-1 rounded-full border border-border/50">
+              <button 
+                onClick={() => navigate(`/${collegeCode}/teacher/live`)}
+                className={`px-4 py-1.5 rounded-full text-[14px] font-semibold transition-all ${location.pathname.includes('/live') ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                Live Monitor
+              </button>
+              <button 
+                onClick={() => navigate(`/${collegeCode}/teacher/attendance`)}
+                className={`px-4 py-1.5 rounded-full text-[14px] font-semibold transition-all ${location.pathname.includes('/attendance') ? 'bg-background text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                Attendance
+              </button>
+            </nav>
           </div>
           
           {/* Right Actions */}
