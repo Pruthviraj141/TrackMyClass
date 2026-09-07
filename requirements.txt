@@ -15,3 +15,10 @@ tqdm
 python-dotenv
 openpyxl
 fpdf
+passlib[bcrypt]
+bcrypt==3.2.2
+python-jose[cryptography]
+PyJWT
+redis
+websockets
+slowapi

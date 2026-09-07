@@ -1,0 +1,39 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- /home/pruthvi/projects/face/TrackMyClass/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/pruthvi/projects/face/TrackMyClass
+plugins: anyio-4.14.2, locust-2.46.3
+collecting ... collected 11 items / 1 error
+
+==================================== ERRORS ====================================
+________________ ERROR collecting backend/tests/test_ws_auth.py ________________
+ImportError while importing test module '/home/pruthvi/projects/face/TrackMyClass/backend/tests/test_ws_auth.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib64/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_ws_auth.py:12: in <module>
+    from backend.core.config import JWT_SECRET, JWT_ALGORITHM
+E   ImportError: cannot import name 'JWT_SECRET' from 'backend.core.config' (/home/pruthvi/projects/face/TrackMyClass/backend/core/config.py)
+------------------------------- Captured stdout --------------------------------
+✅ Database mode: firebase
+ML Pipeline Bootrapping on: cpu, Threshold: 0.75
+=============================== warnings summary ===============================
+venv/lib64/python3.14/site-packages/fastapi/testclient.py:1
+  /home/pruthvi/projects/face/TrackMyClass/venv/lib64/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+backend/api/schemas/registration.py:10
+  /home/pruthvi/projects/face/TrackMyClass/backend/api/schemas/registration.py:10: PydanticDeprecatedSince20: `min_items` is deprecated and will be removed, use `min_length` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    frames: List[str] = Field(..., min_items=1, max_items=35)
+
+backend/api/schemas/registration.py:10
+  /home/pruthvi/projects/face/TrackMyClass/backend/api/schemas/registration.py:10: PydanticDeprecatedSince20: `max_items` is deprecated and will be removed, use `max_length` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    frames: List[str] = Field(..., min_items=1, max_items=35)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR backend/tests/test_ws_auth.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+========================= 3 warnings, 1 error in 5.22s =========================

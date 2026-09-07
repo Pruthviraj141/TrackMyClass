@@ -1,0 +1,54 @@
+name: Deploy to EC2 Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        env:
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          SESSION_SECRET_KEY: ${{ secrets.SESSION_SECRET_KEY }}
+          API_HOST: ${{ secrets.API_HOST }}
+          API_PORT: ${{ secrets.API_PORT }}
+          CORS_ORIGINS: ${{ secrets.CORS_ORIGINS }}
+          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          envs: ADMIN_USERNAME,ADMIN_PASSWORD,SESSION_SECRET_KEY,API_HOST,API_PORT,CORS_ORIGINS,FIREBASE_CREDENTIALS_JSON
+          script: |
+            cd /home/${{ secrets.EC2_USERNAME }}/projects/face/TrackMyClass
+            
+            # Step 1: Fix Dirty State Errors by forcing pull
+            git fetch origin main
+            git reset --hard origin/main
+            git clean -fd
+            
+            # Step 1.5: Inject .env file securely from Action Secrets
+            echo "ADMIN_USERNAME=$ADMIN_USERNAME" > .env
+            echo "ADMIN_PASSWORD=$ADMIN_PASSWORD" >> .env
+            echo "SESSION_SECRET_KEY=$SESSION_SECRET_KEY" >> .env
+            echo "API_HOST=$API_HOST" >> .env
+            echo "API_PORT=$API_PORT" >> .env
+            echo "CORS_ORIGINS=$CORS_ORIGINS" >> .env
+            echo "$FIREBASE_CREDENTIALS_JSON" > firebase.json
+            echo "FIREBASE_CREDENTIALS_PATH=./firebase.json" >> .env
+            
+            # Step 2: Restart docker containers
+            docker compose -f docker-compose.yml down
+            docker compose -f docker-compose.yml build
+            docker compose -f docker-compose.yml up -d
+            
+            # Step 3: Prevent Disk Space Exhaustion 
+            docker system prune -af --volumes
