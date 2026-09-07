@@ -50,11 +50,7 @@ jobs:
             docker compose -f docker-compose.yml build
             docker compose -f docker-compose.yml up -d
 
-            # Step 2.5: Apply Nginx configuration to reverse proxy to containers
-            if [ -f /etc/nginx/sites-available/default ]; then
-              sudo cp nginx.conf /etc/nginx/sites-available/default
-              sudo systemctl reload nginx || sudo service nginx reload
-            fi
+            # (Nginx auto-updater removed to preserve certbot SSL configuration)
 
             # Step 3: Prevent Disk Space Exhaustion 
             docker system prune -af --volumes
