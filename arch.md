@@ -1,7 +1,7 @@
 Yes bro. **This is the correct correction to make before doing more UI.** The current flow mixed up three different concepts:
 
 **Institution discovery/access ≠ user authentication ≠ institution administration.**
-
+done with loe 
 That is why the experience feels dumb and why you are hitting errors.
 
 # The correct TrackMyClass flow
