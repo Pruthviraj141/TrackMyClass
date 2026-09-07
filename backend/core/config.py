@@ -138,7 +138,7 @@ def get_database_mode() -> str:
             print(f"⚠️  Firebase JSON env setup failed: {e}")
             print("↪  Falling back to SQLite database.")
             return "sqlite"
-    elif FIREBASE_CREDENTIALS_PATH.exists():
+    elif FIREBASE_CREDENTIALS_PATH.is_file():
         try:
             cred = credentials.Certificate(str(FIREBASE_CREDENTIALS_PATH))
             # Check if already initialized

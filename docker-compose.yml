@@ -32,7 +32,6 @@ services:
       - redis
     restart: unless-stopped
     volumes:
-      - ./firebase.json:/app/firebase.json:ro,z
       - ./backend:/app/backend:z
 
   # ──────────────────────────────────────────────
