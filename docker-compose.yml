@@ -33,7 +33,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./firebase.json:/app/firebase.json:ro,z
-      - ./backend:/app/backend:z
 
   # ──────────────────────────────────────────────
   # Frontend - Vite React App
@@ -51,8 +50,6 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-    volumes:
-      - ./frontend:/app:z
 
 volumes:
   redis_data:
