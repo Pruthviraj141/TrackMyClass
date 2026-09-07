@@ -9,12 +9,12 @@ import pandas as pd
 from datetime import datetime
 from fpdf import FPDF
 
-from backend.config import DATABASE_MODE
+from backend.core.config import DATABASE_MODE
 
 if DATABASE_MODE == "firebase":
-    from backend.database.firebase_service import get_attendance_by_session_id
+    from backend.infrastructure.database.firebase_impl import get_attendance_by_session_id
 else:
-    from backend.database.sqlite_service import get_attendance_by_session_id
+    from backend.infrastructure.database.sqlite_impl import get_attendance_by_session_id
 
 
 # Uses environment variable for Azure Web App compatibility

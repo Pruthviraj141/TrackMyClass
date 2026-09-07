@@ -6,7 +6,7 @@ Matches face embeddings against stored student embeddings using cosine similarit
 import numpy as np
 from typing import Optional
 
-from backend.config import SIMILARITY_THRESHOLD
+from backend.core.config import SIMILARITY_THRESHOLD
 
 
 def cosine_similarity(embedding1: np.ndarray, embedding2: np.ndarray) -> float:

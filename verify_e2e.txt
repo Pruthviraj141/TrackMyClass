@@ -1,0 +1,141 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- /home/pruthvi/projects/face/TrackMyClass/venv/bin/python
+cachedir: .pytest_cache
+rootdir: /home/pruthvi/projects/face/TrackMyClass
+plugins: anyio-4.14.2, locust-2.46.3
+collecting ... ✅ Database mode: firebase
+ML Pipeline Bootrapping on: cpu, Threshold: 0.75
+collected 6 items
+
+backend/tests/integration/test_e2e_auth_roles.py::test_group1_admin_auth_success FAILED
+backend/tests/integration/test_e2e_auth_roles.py::test_group1_admin_auth_failure PASSED
+backend/tests/integration/test_e2e_auth_roles.py::test_group19_role_enforcement FAILED
+backend/tests/integration/test_e2e_core_flows.py::test_group2_registration_happy_path FAILED
+backend/tests/integration/test_e2e_core_flows.py::test_group3_registration_failures FAILED
+backend/tests/integration/test_e2e_core_flows.py::test_group6_live_attendance FAILED
+
+=================================== FAILURES ===================================
+________________________ test_group1_admin_auth_success ________________________
+
+    def test_group1_admin_auth_success():
+        # 1.1 Valid credentials
+        response = client.post("/api/v1/auth/login", data={
+            "login_type": "admin",
+            "username": "admin",
+            "password": "password"  # Default test password
+        })
+    
+>       assert response.status_code == 200
+E       assert 401 == 200
+E        +  where 401 = <Response [401 Unauthorized]>.status_code
+
+backend/tests/integration/test_e2e_auth_roles.py:16: AssertionError
+------------------------------ Captured log call -------------------------------
+INFO     trackmyclass.audit:audit.py:25 {"timestamp": "2026-09-06T09:26:43.778812", "event_type": "LOGIN_ATTEMPT", "status": "FAILED", "details": {"username": "admin", "ip": "testclient", "request_id": "896cda63-191f-48e5-b431-3db682d8550b"}}
+________________________ test_group19_role_enforcement _________________________
+
+    def test_group19_role_enforcement():
+        # Attempting to hit an auth-protected route without tokens
+        resp = client.get("/api/v1/institutions/")
+>       assert resp.status_code == 401
+E       assert 404 == 401
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+backend/tests/integration/test_e2e_auth_roles.py:41: AssertionError
+_____________________ test_group2_registration_happy_path ______________________
+
+auth_headers = {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzeXNhZG1pbl8xMjMiLCJ1c2VybmFtZSI6ImFkbWluIiw...ElUVVRJT05fQURNSU4ifV0sImV4cCI6MTc4ODc3MzIwNH0.57K-IXH7Xh_t6KLw2QbRG-Euefvn7bGC_lU-T0lq-QE', 'X-Tenant-ID': 'DEMO2026'}
+
+    def test_group2_registration_happy_path(auth_headers):
+        # 2.1 Registering valid face
+        # Ensure sample face exists
+        face_path = "benchmarks/sample_face.jpg"
+        assert os.path.exists(face_path)
+    
+        with open(face_path, "rb") as f:
+            resp = client.post("/api/v1/registration/",
+                headers=auth_headers,
+                data={
+                    "name": "Test Student A1",
+                    "roll_number": "A1",
+                    "institution_id": "DEMO2026",
+                    "gender": "Other"
+                },
+                files={"file": ("sample_face.jpg", f, "image/jpeg")}
+            )
+>       assert resp.status_code == 200
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+backend/tests/integration/test_e2e_core_flows.py:37: AssertionError
+------------------------------ Captured log setup ------------------------------
+INFO     trackmyclass.audit:audit.py:25 {"timestamp": "2026-09-06T09:26:44.814272", "event_type": "LOGIN_ATTEMPT", "status": "SUCCESS", "details": {"user_id": "sysadmin_123", "username": "admin", "ip": "testclient", "request_id": "30454359-f470-46a2-93b6-368f33c4475d"}}
+______________________ test_group3_registration_failures _______________________
+
+auth_headers = {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzeXNhZG1pbl8xMjMiLCJ1c2VybmFtZSI6ImFkbWluIiw...ElUVVRJT05fQURNSU4ifV0sImV4cCI6MTc4ODc3MzIwNH0.57K-IXH7Xh_t6KLw2QbRG-Euefvn7bGC_lU-T0lq-QE', 'X-Tenant-ID': 'DEMO2026'}
+
+    def test_group3_registration_failures(auth_headers):
+        # 3.1 No face / bad image
+        resp = client.post("/api/v1/registration/",
+            headers=auth_headers,
+            data={
+                "name": "Test Student A2",
+                "roll_number": "A2",
+                "institution_id": "DEMO2026",
+                "gender": "Other"
+            },
+            files={"file": ("empty.jpg", b"fakebytes", "image/jpeg")}
+        )
+>       assert resp.status_code == 400
+E       assert 404 == 400
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+backend/tests/integration/test_e2e_core_flows.py:53: AssertionError
+_________________________ test_group6_live_attendance __________________________
+
+auth_headers = {'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzeXNhZG1pbl8xMjMiLCJ1c2VybmFtZSI6ImFkbWluIiw...ElUVVRJT05fQURNSU4ifV0sImV4cCI6MTc4ODc3MzIwNH0.57K-IXH7Xh_t6KLw2QbRG-Euefvn7bGC_lU-T0lq-QE', 'X-Tenant-ID': 'DEMO2026'}
+
+    def test_group6_live_attendance(auth_headers):
+        # 6.1 Teacher submits valid frame
+        # Create manual session first
+        resp_session = client.post("/api/v1/attendance/session/start",
+            headers=auth_headers,
+            json={"institution_id": "DEMO2026"}
+        )
+>       assert resp_session.status_code == 200
+E       assert 422 == 200
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+backend/tests/integration/test_e2e_core_flows.py:63: AssertionError
+=============================== warnings summary ===============================
+venv/lib64/python3.14/site-packages/fastapi/testclient.py:1
+  /home/pruthvi/projects/face/TrackMyClass/venv/lib64/python3.14/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+backend/api/schemas/registration.py:10
+  /home/pruthvi/projects/face/TrackMyClass/backend/api/schemas/registration.py:10: PydanticDeprecatedSince20: `min_items` is deprecated and will be removed, use `min_length` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    frames: List[str] = Field(..., min_items=1, max_items=10)
+
+backend/api/schemas/registration.py:10
+  /home/pruthvi/projects/face/TrackMyClass/backend/api/schemas/registration.py:10: PydanticDeprecatedSince20: `max_items` is deprecated and will be removed, use `max_length` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    frames: List[str] = Field(..., min_items=1, max_items=10)
+
+backend/tests/integration/test_e2e_auth_roles.py::test_group1_admin_auth_success
+backend/tests/integration/test_e2e_auth_roles.py::test_group1_admin_auth_failure
+backend/tests/integration/test_e2e_auth_roles.py::test_group1_admin_auth_failure
+backend/tests/integration/test_e2e_core_flows.py::test_group2_registration_happy_path
+  /home/pruthvi/projects/face/TrackMyClass/backend/core/audit.py:20: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    "timestamp": datetime.utcnow().isoformat(),
+
+backend/tests/integration/test_e2e_core_flows.py::test_group2_registration_happy_path
+  /home/pruthvi/projects/face/TrackMyClass/backend/core/security.py:27: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED backend/tests/integration/test_e2e_auth_roles.py::test_group1_admin_auth_success
+FAILED backend/tests/integration/test_e2e_auth_roles.py::test_group19_role_enforcement
+FAILED backend/tests/integration/test_e2e_core_flows.py::test_group2_registration_happy_path
+FAILED backend/tests/integration/test_e2e_core_flows.py::test_group3_registration_failures
+FAILED backend/tests/integration/test_e2e_core_flows.py::test_group6_live_attendance
+=================== 5 failed, 1 passed, 8 warnings in 6.17s ====================

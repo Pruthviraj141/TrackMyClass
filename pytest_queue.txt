@@ -1,0 +1,22 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.7, pytest-9.1.1, pluggy-1.6.0 -- /home/pruthvi/projects/face/TrackMyClass/venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/pruthvi/projects/face/TrackMyClass
+plugins: anyio-4.14.2, locust-2.46.3
+collecting ... collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+______________ ERROR collecting backend/tests/test_frame_queue.py ______________
+ImportError while importing test module '/home/pruthvi/projects/face/TrackMyClass/backend/tests/test_frame_queue.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/lib64/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/tests/test_frame_queue.py:8: in <module>
+    from backend.worker.frame_queue import FrameQueue, QueuedFrame
+E   ModuleNotFoundError: No module named 'backend'
+=========================== short test summary info ============================
+ERROR backend/tests/test_frame_queue.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.19s ===============================

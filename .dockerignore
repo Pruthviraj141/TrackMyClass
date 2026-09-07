@@ -1,0 +1,22 @@
+# Python
+**/venv/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+**/node_modules/
+frontend/dist/
+
+# Git
+.git/
+.github/
+
+# Logs & PIDs
+*.log
+*.pid
+
+# Docs & non-essential
+legacy_frontend/
+benchmarks/
+docs/

@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/home/pruthvi/projects/face/TrackMyClass/scripts/benchmark_phase5.py", line 64, in <module>
+    if __name__ == "__main__": asyncio.run(main())
+                               ~~~~~~~~~~~^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/runners.py", line 205, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/usr/lib64/python3.14/asyncio/runners.py", line 128, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib64/python3.14/asyncio/base_events.py", line 720, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/home/pruthvi/projects/face/TrackMyClass/scripts/benchmark_phase5.py", line 49, in main
+    session_id = resp.json()["session_id"]
+                 ~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'session_id'

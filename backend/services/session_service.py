@@ -5,8 +5,10 @@ Only one session can be active at a time.
 """
 
 import uuid
+import json
 from datetime import datetime
 from typing import Optional
+from backend.core.redis_client import RedisManager
 
 
 class Session:
@@ -38,71 +40,101 @@ class Session:
 
 class SessionManager:
     """
-    Manages class sessions.
-    Only one session active at a time.
-    Attendance is only allowed during an active session.
+    Manages class sessions per institution.
+    Only one session active at a time per institution.
     """
 
     def __init__(self):
-        self._active_session: Optional[Session] = None
-        self._session_history: list[Session] = []
+        # Maps institution_id -> active Session
+        self._active_sessions: dict[str, Session] = {}
+        # Maps institution_id -> list of historical Sessions
+        self._session_histories: dict[str, list[Session]] = {}
 
-    def start_session(self, subject_name: str) -> Session:
-        """
-        Start a new class session.
-        Automatically ends the previous session if one is still active.
+    async def _sync_redis(self, institution_id: str, session: Optional[Session]):
+        """Persists lightweight distributed session tracking state."""
+        redis = RedisManager.get_client()
+        if not redis:
+            return
+        key = f"session:active:{institution_id}"
+        if session:
+            try:
+                await redis.set(key, json.dumps(session.to_dict()), ex=86400) # 24h expire
+            except Exception:
+                pass
+        else:
+            try:
+                await redis.delete(key)
+            except Exception:
+                pass
 
-        Args:
-            subject_name: Name of the class/subject (e.g. "Java", "NLP")
-
-        Returns:
-            The newly created Session object.
-        """
-        # End any currently active session first
-        if self._active_session and self._active_session.is_active:
-            self.end_session()
+    async def start_session(self, institution_id: str, subject_name: str) -> Session:
+        """Start a new class session for an institution."""
+        active = await self.get_active_session(institution_id)
+        if active:
+            await self.end_session(institution_id)
 
         session = Session(subject_name=subject_name)
-        self._active_session = session
-        print(f"📗 Session started: {subject_name} [{session.session_id[:8]}]")
+        self._active_sessions[institution_id] = session
+        await self._sync_redis(institution_id, session)
+        print(f"📗 Session started [{institution_id}]: {subject_name} [{session.session_id[:8]}]")
         return session
 
-    def end_session(self) -> Optional[Session]:
-        """
-        End the currently active session.
-
-        Returns:
-            The ended Session object, or None if no session was active.
-        """
-        if self._active_session and self._active_session.is_active:
-            self._active_session.end()
-            self._session_history.append(self._active_session)
+    async def end_session(self, institution_id: str) -> Optional[Session]:
+        """End the currently active session for an institution."""
+        active = await self.get_active_session(institution_id)
+        if active:
+            active.end()
+            if institution_id not in self._session_histories:
+                self._session_histories[institution_id] = []
+            self._session_histories[institution_id].append(active)
             print(
-                f"📕 Session ended: {self._active_session.subject_name} "
-                f"[{self._active_session.session_id[:8]}] — "
-                f"{self._active_session.attendance_count} marked"
+                f"📕 Session ended [{institution_id}]: {active.subject_name} "
+                f"[{active.session_id[:8]}] — "
+                f"{active.attendance_count} marked"
             )
-            ended = self._active_session
-            self._active_session = None
-            return ended
+            del self._active_sessions[institution_id]
+            await self._sync_redis(institution_id, None)
+            return active
         return None
 
-    def get_active_session(self) -> Optional[Session]:
-        """Get the currently active session, or None."""
-        if self._active_session and self._active_session.is_active:
-            return self._active_session
+    async def get_active_session(self, institution_id: str) -> Optional[Session]:
+        """Get the currently active session for an institution."""
+        active = self._active_sessions.get(institution_id)
+        if active and active.is_active:
+            return active
+            
+        # Distributed Fetch across horizontally scaled nodes
+        redis = RedisManager.get_client()
+        if redis:
+            try:
+                data = await redis.get(f"session:active:{institution_id}")
+                if data:
+                    s_data = json.loads(data)
+                    s = Session(subject_name=s_data.get("subject_name", ""))
+                    s.session_id = s_data.get("session_id")
+                    s.start_time = s_data.get("start_time")
+                    s.end_time = s_data.get("end_time")
+                    s.is_active = s_data.get("is_active", True)
+                    s.attendance_count = s_data.get("attendance_count", 0)
+                    self._active_sessions[institution_id] = s
+                    return s
+            except Exception:
+                pass
         return None
 
-    def increment_attendance(self):
-        """Increment the attendance count for the active session."""
-        if self._active_session and self._active_session.is_active:
-            self._active_session.attendance_count += 1
+    async def increment_attendance(self, institution_id: str):
+        """Increment the attendance count for the active session of an institution."""
+        active = await self.get_active_session(institution_id)
+        if active:
+            active.attendance_count += 1
+            await self._sync_redis(institution_id, active)
 
-    def get_session_history(self) -> list[dict]:
-        """Get all past sessions as a list of dicts."""
-        history = [s.to_dict() for s in self._session_history]
-        if self._active_session:
-            history.append(self._active_session.to_dict())
+    async def get_session_history(self, institution_id: str) -> list[dict]:
+        """Get all past sessions for an institution as a list of dicts."""
+        history = [s.to_dict() for s in self._session_histories.get(institution_id, [])]
+        active = await self.get_active_session(institution_id)
+        if active:
+            history.append(active.to_dict())
         return history
 
 
