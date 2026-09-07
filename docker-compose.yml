@@ -45,8 +45,8 @@ services:
     ports:
       - "5173:5173"
     environment:
-      # Use localhost:8000 because requests originate from the user's browser, not the container network!
-      - VITE_API_URL=http://localhost:8000/api/v1
+      # Use a relative URL so the browser automatically maps it through the Nginx reverse proxy!
+      - VITE_API_URL=/api/v1
     depends_on:
       - backend
     restart: unless-stopped

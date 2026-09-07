@@ -7,4 +7,9 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), tsconfigPaths()],
+  server: {
+    allowedHosts: ['trackmyclass.work.gd', 'www.trackmyclass.work.gd'],
+    host: '0.0.0.0',
+    port: 5173
+  }
 })
